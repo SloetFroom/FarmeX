@@ -1,243 +1,57 @@
-let scene, camera, renderer, controls, mixer;
-const clock = new THREE.Clock();
-
-function init() {
-    // 1. Escena
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a1a);
-    scene.fog = new THREE.Fog(0x1a1a1a, 10, 100); 
-
-    // 2. Grid (Piso)
-    const grid = new THREE.GridHelper(100, 100, 0x444444, 0x222222);
-    grid.position.y = -0.01;
-    scene.add(grid);
-
-    // 3. Iluminación
-    const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-    scene.add(ambientLight);
-
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    mainLight.position.set(5, 10, 7);
-    mainLight.castShadow = true;
-    // Optimización: Tamaño de mapa de sombras ajustado para balance calidad/rendimiento
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.bias = -0.0001;
-    scene.add(mainLight);
-
-    const fillLight = new THREE.DirectionalLight(0xddeeff, 0.5);
-    fillLight.position.set(-5, 5, 5);
-    scene.add(fillLight);
-
-    const rimLight = new THREE.DirectionalLight(0xffaa00, 0.5);
-    rimLight.position.set(0, 5, -10);
-    scene.add(rimLight);
-
-    // 4. Cámara
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set(8, 5, 8);
-
-    // 5. Renderizador
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    
-    // IMPORTANTE PARA MÓVILES: Limitar pixelRatio a 2 para ahorrar batería y GPU
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
-
-    document.body.appendChild(renderer.domElement);
-
-    // 6. Controles
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.target.set(0, 0, 0);
-    controls.update();
-
-    // Eventos
-    window.addEventListener('resize', onWindowResize);
-    document.getElementById('fileInput').addEventListener('change', loadFile);
-
-    animate();
+body { 
+    margin: 0; overflow: hidden; background-color: #121212; 
+    color: #fff; font-family: sans-serif; overscroll-behavior: none;
 }
 
-// --- LÓGICA DE CARGA ---
-function loadFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Reiniciar UI
-    const loaderEl = document.getElementById('loader');
-    const statusEl = document.getElementById('status');
-    
-    loaderEl.style.display = 'flex';
-    statusEl.innerText = `Leyendo: ${file.name}`;
-    
-    const url = URL.createObjectURL(file);
-    const extension = file.name.split('.').pop().toLowerCase();
-
-    setTimeout(() => {
-        try {
-            switch (extension) {
-                case 'fbx': loadModel(new THREE.FBXLoader(), url, extension); break;
-                case 'gltf': 
-                case 'glb': loadModel(new THREE.GLTFLoader(), url, extension); break;
-                case 'obj': loadModel(new THREE.OBJLoader(), url, extension); break;
-                case 'stl': loadSTL(url); break;
-                default:
-                    throw new Error("Formato no soportado.");
-            }
-        } catch (e) {
-            onError(e);
-        }
-    }, 100);
+#ui-container {
+    position: absolute; top: 20px; left: 20px; z-index: 10;
+    background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(10px);
+    padding: 20px; border-radius: 12px; border: 1px solid #333;
+    width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 
-function loadModel(loader, url, ext) {
-    loader.load(url, (loadedData) => {
-        let object;
-        
-        if (ext === 'gltf' || ext === 'glb') {
-            object = loadedData.scene;
-            if (loadedData.animations && loadedData.animations.length > 0) {
-                object.animations = loadedData.animations;
-            }
-        } else {
-            object = loadedData;
-        }
-        
-        onModelLoaded(object);
-    }, onProgress, onError);
+h1 { font-size: 16px; margin: 0 0 15px 0; color: #4facfe; text-transform: uppercase; }
+
+input[type="file"] { display: none; }
+
+.custom-file-upload, .btn-delete {
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px; cursor: pointer; border-radius: 8px;
+    font-weight: bold; font-size: 14px; transition: 0.2s;
+    width: 100%; border: none; margin-bottom: 8px;
+    box-sizing: border-box;
 }
 
-function loadSTL(url) {
-    const loader = new THREE.STLLoader();
-    loader.load(url, (geometry) => {
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0x606060, 
-            roughness: 0.5, 
-            metalness: 0.6 
-        });
-        const mesh = new THREE.Mesh(geometry, material);
-        geometry.center();
-        
-        const group = new THREE.Group();
-        group.add(mesh);
-        onModelLoaded(group);
-    }, onProgress, onError);
+.custom-file-upload {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    color: white;
 }
 
-// --- PROCESAMIENTO DEL MODELO ---
-function onModelLoaded(object) {
-    const prevModel = scene.getObjectByName('LoadedModel');
-    if (prevModel) {
-        prevModel.traverse(o => {
-            if (o.geometry) o.geometry.dispose();
-            if (o.material) {
-                if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
-                else o.material.dispose();
-            }
-        });
-        scene.remove(prevModel);
-    }
-
-    object.name = 'LoadedModel';
-
-    mixer = null;
-    if (object.animations && object.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(object);
-        const action = mixer.clipAction(object.animations[0]);
-        action.play();
-        document.getElementById('status').innerHTML = `<span style="color:#4facfe">▶ Reproduciendo:</span> ${object.animations[0].name}`;
-    } else {
-        document.getElementById('status').innerText = "Modelo cargado (Estático)";
-    }
-
-    object.traverse(function (child) {
-        if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-
-            if (child.material) {
-                child.material.side = THREE.DoubleSide;
-                if (!child.material.map) {
-                    child.material.roughness = 0.7;
-                    child.material.metalness = 0.1;
-                }
-            }
-        }
-    });
-
-    const box = new THREE.Box3().setFromObject(object);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-
-    object.position.x = -center.x;
-    object.position.y = -center.y;
-    object.position.z = -center.z;
-
-    const pivot = new THREE.Group();
-    pivot.add(object);
-    pivot.name = 'LoadedModel';
-    
-    const yOffset = size.y / 2;
-    object.position.y += yOffset; 
-
-    scene.add(pivot);
-
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    let cameraDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-
-    cameraDist *= 1.8; 
-
-    const direction = new THREE.Vector3(1, 0.6, 1).normalize();
-    const finalPos = direction.multiplyScalar(cameraDist);
-
-    camera.position.copy(finalPos);
-    camera.lookAt(0, size.y / 2, 0);
-    
-    controls.target.set(0, size.y / 2, 0);
-    controls.update();
-    
-    scene.fog.near = cameraDist * 2;
-    scene.fog.far = cameraDist * 5;
-
-    document.getElementById('loader').style.display = 'none';
+.btn-delete {
+    background: #2a2a2a; color: #ff4444; border: 1px solid #444;
 }
 
-function onProgress(xhr) {
-    if(xhr.lengthComputable) {
-        const percent = Math.round((xhr.loaded / xhr.total) * 100);
-        document.getElementById('status').innerText = `Cargando datos: ${percent}%`;
+.btn-delete:hover { background: #ff4444; color: white; }
+
+#status { margin-top: 10px; font-size: 12px; color: #aaa; }
+.info-text { font-size: 10px; color: #555; margin-top: 5px; }
+
+#loader {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); display: none;
+    justify-content: center; align-items: center; flex-direction: column; z-index: 100;
+}
+
+.spinner {
+    border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #4facfe;
+    border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* AJUSTE MÓVIL */
+@media (max-width: 600px) {
+    #ui-container {
+        top: auto; bottom: 30px; left: 50%;
+        transform: translateX(-50%); width: 90%;
     }
 }
-
-function onError(error) {
-    console.error(error);
-    document.getElementById('loader').style.display = 'none';
-    document.getElementById('status').innerHTML = `<span style="color:#ff4444">⚠ Error al cargar</span>`;
-    alert("Error: Verifica que el archivo sea un modelo 3D válido.");
-}
-
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-    if (mixer) mixer.update(delta);
-    controls.update();
-    renderer.render(scene, camera);
-}
-
-// Iniciar aplicación
-init();
