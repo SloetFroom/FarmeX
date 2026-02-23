@@ -1,9 +1,23 @@
 let scene, camera, renderer, controls, mixer, grid, mainLight, ambientLight, fillLight;
 const clock = new THREE.Clock();
 
-document.getElementById('toggle-btn').addEventListener('click', () => {
-    document.getElementById('ui-container').classList.toggle('collapsed');
-});
+// --- SOLUCIÓN PARA MÓVILES ---
+const toggleBtn = document.getElementById('toggle-btn');
+const uiContainer = document.getElementById('ui-container');
+
+function handleToggle(e) {
+    // Evita que el evento se propague al canvas de Three.js
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    uiContainer.classList.toggle('collapsed');
+}
+
+// Escuchamos ambos: click para PC y touchstart para respuesta inmediata en móvil
+toggleBtn.addEventListener('click', handleToggle);
+toggleBtn.addEventListener('touchstart', handleToggle, { passive: false });
+// ------------------------------
 
 function init() {
     scene = new THREE.Scene();
@@ -15,28 +29,22 @@ function init() {
     grid.position.y = -0.01; 
     scene.add(grid);
 
-    // --- SISTEMA DE ILUMINACIÓN MEJORADO ---
-    // 1. Luz de ambiente general (suave)
+    // --- SISTEMA DE ILUMINACIÓN ---
     ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
-    // 2. Hemisphere light para simular el rebote del cielo y el suelo
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
 
-    // Cámara
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set(8, 5, 8);
+    scene.add(camera); 
     
-    // 3. Luz anclada a la cámara (El modelo siempre estará iluminado desde donde lo miras)
-    scene.add(camera); // Necesario agregar la cámara a la escena si va a tener hijos
-    
-    mainLight = new THREE.DirectionalLight(0xffffff, 2.5); // Más intensidad por el PhysicallyCorrectLights
-    mainLight.position.set(1, 1, 2); // Posición relativa a la cámara
+    mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    mainLight.position.set(1, 1, 2);
     camera.add(mainLight);
 
-    // 4. Luz de relleno (Rim light) en la escena para dar profundidad
     fillLight = new THREE.DirectionalLight(0xddeeff, 1.2);
     fillLight.position.set(-5, 5, -5);
     scene.add(fillLight);
@@ -48,7 +56,6 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
-    // Renderizado físico correcto (esencial para PBR)
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; 
     renderer.toneMappingExposure = 1.0;
@@ -63,7 +70,7 @@ function init() {
     controls.target.set(0, 0, 0);
     controls.update();
 
-    // Eventos
+    // Eventos de UI
     window.addEventListener('resize', onWindowResize);
     document.getElementById('fileInput').addEventListener('change', loadFile);
 
@@ -77,7 +84,6 @@ function init() {
         grid.visible = e.target.checked;
     });
 
-    // Ajustado el control de luz
     document.getElementById('lightIntensity').addEventListener('input', (e) => {
         const intensity = parseFloat(e.target.value);
         mainLight.intensity = intensity;
@@ -133,7 +139,6 @@ function loadModel(loader, url, ext) {
 function loadSTL(url) {
     const loader = new THREE.STLLoader();
     loader.load(url, (geometry) => {
-        // STL no trae texturas, usamos un StandardMaterial decente
         const material = new THREE.MeshStandardMaterial({ 
             color: 0xcccccc, 
             roughness: 0.3, 
@@ -175,15 +180,12 @@ function onModelLoaded(object) {
     
     document.getElementById('status').innerHTML = statusHTML;
 
-    // Arreglo en la lectura de materiales
     object.traverse(function (child) {
         if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             if (child.material) {
-                // Manejar en caso de que el material sea un array de materiales
                 const materials = Array.isArray(child.material) ? child.material : [child.material];
-                
                 materials.forEach(mat => {
                     mat.side = THREE.DoubleSide;
                     if (!mat.map && mat.isMeshStandardMaterial) {
@@ -231,8 +233,9 @@ function onModelLoaded(object) {
 
     document.getElementById('loader').style.display = 'none';
     
+    // Auto-colapsar en móviles al cargar
     if(window.innerWidth <= 768) {
-        document.getElementById('ui-container').classList.add('collapsed');
+        uiContainer.classList.add('collapsed');
     }
 }
 
@@ -246,7 +249,7 @@ function onProgress(xhr) {
 function onError(error) {
     console.error(error);
     document.getElementById('loader').style.display = 'none';
-    document.getElementById('status').innerHTML = `<span class="status-error">⚠ Error al cargar archivo</span>`;
+    document.getElementById('status').innerHTML = `<span class="status-error">⚠ Error</span>`;
 }
 
 function onWindowResize() {
