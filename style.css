@@ -20,11 +20,18 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
     min-width: 250px;
+    transition: all 0.3s ease;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 h1 { 
     font-size: 15px; 
-    margin: 0 0 16px 0; 
+    margin: 0; 
     color: #ffffff; 
     font-weight: 600; 
     letter-spacing: 0.5px;
@@ -39,7 +46,44 @@ h1 {
     color: #3b82f6;
 }
 
-/* File Input Styling */
+#toggle-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#toggle-btn:hover { color: #ffffff; }
+
+#toggle-btn svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+}
+
+#ui-content {
+    margin-top: 16px;
+    max-height: 500px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+    overflow: hidden;
+}
+
+#ui-container.collapsed #ui-content {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+}
+
+#ui-container.collapsed #toggle-btn svg {
+    transform: rotate(180deg);
+}
+
 input[type="file"] { display: none; }
 
 .custom-file-upload {
@@ -81,7 +125,6 @@ input[type="file"] { display: none; }
     line-height: 1.5; 
 }
 
-/* --- CONTROLES DE ENTORNO --- */
 .controls-section {
     margin-top: 16px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -99,7 +142,6 @@ input[type="file"] { display: none; }
     color: #d1d5db;
 }
 
-/* Estilo para input de color */
 input[type="color"] {
     -webkit-appearance: none;
     border: none;
@@ -113,14 +155,12 @@ input[type="color"] {
 input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; }
 
-/* Estilo para Slider */
 input[type="range"] {
     width: 100px;
     accent-color: #3b82f6;
     cursor: pointer;
 }
 
-/* Estilo para Checkbox */
 input[type="checkbox"] {
     accent-color: #3b82f6;
     width: 16px;
@@ -128,7 +168,6 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-/* Loading Bar */
 #loader {
     position: fixed; 
     top: 0; left: 0; width: 100%; height: 100%;
@@ -158,6 +197,13 @@ input[type="checkbox"] {
     100% { transform: rotate(360deg); } 
 }
 
-/* Status colors */
 .status-success { color: #10b981; }
 .status-error { color: #ef4444; }
+
+@media (max-width: 768px) {
+    #ui-container {
+        top: 16px; left: 16px; right: 16px;
+        width: auto; min-width: auto; padding: 16px;
+    }
+    #toggle-btn { display: flex; }
+}
