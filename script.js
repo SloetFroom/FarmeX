@@ -1,9 +1,11 @@
-// Variables globales
-let scene, camera, renderer, controls, mixer, grid, mainLight, ambientLight;
+let scene, camera, renderer, controls, mixer, grid, mainLight, ambientLight, fillLight;
 const clock = new THREE.Clock();
 
+document.getElementById('toggle-btn').addEventListener('click', () => {
+    document.getElementById('ui-container').classList.toggle('collapsed');
+});
+
 function init() {
-    // Escena
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x131316); 
     scene.fog = new THREE.Fog(0x131316, 10, 100); 
@@ -13,29 +15,31 @@ function init() {
     grid.position.y = -0.01; 
     scene.add(grid);
 
-    // Luces
-    ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    // --- SISTEMA DE ILUMINACIÓN MEJORADO ---
+    // 1. Luz de ambiente general (suave)
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
-    mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    mainLight.position.set(5, 10, 7);
-    mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 2048; 
-    mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.bias = -0.0001;
-    scene.add(mainLight);
-
-    const fillLight = new THREE.DirectionalLight(0xddeeff, 0.5);
-    fillLight.position.set(-5, 5, 5);
-    scene.add(fillLight);
-
-    const rimLight = new THREE.DirectionalLight(0xffaa00, 0.5);
-    rimLight.position.set(0, 5, -10);
-    scene.add(rimLight);
+    // 2. Hemisphere light para simular el rebote del cielo y el suelo
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
 
     // Cámara
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set(8, 5, 8);
+    
+    // 3. Luz anclada a la cámara (El modelo siempre estará iluminado desde donde lo miras)
+    scene.add(camera); // Necesario agregar la cámara a la escena si va a tener hijos
+    
+    mainLight = new THREE.DirectionalLight(0xffffff, 2.5); // Más intensidad por el PhysicallyCorrectLights
+    mainLight.position.set(1, 1, 2); // Posición relativa a la cámara
+    camera.add(mainLight);
+
+    // 4. Luz de relleno (Rim light) en la escena para dar profundidad
+    fillLight = new THREE.DirectionalLight(0xddeeff, 1.2);
+    fillLight.position.set(-5, 5, -5);
+    scene.add(fillLight);
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -43,43 +47,47 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Renderizado físico correcto (esencial para PBR)
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; 
     renderer.toneMappingExposure = 1.0;
+    renderer.physicallyCorrectLights = true; 
+    
     document.body.appendChild(renderer.domElement);
 
-    // Controles de cámara
+    // Controles
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; 
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0, 0);
     controls.update();
 
-    // Eventos de interfaz
+    // Eventos
     window.addEventListener('resize', onWindowResize);
     document.getElementById('fileInput').addEventListener('change', loadFile);
 
-    // --- EVENTOS DE CONTROLES DE ENTORNO ---
     document.getElementById('bgColor').addEventListener('input', (e) => {
         const newColor = new THREE.Color(e.target.value);
         scene.background = newColor;
-        scene.fog.color = newColor;
+        scene.fog.color = newColor; 
     });
 
     document.getElementById('gridToggle').addEventListener('change', (e) => {
         grid.visible = e.target.checked;
     });
 
+    // Ajustado el control de luz
     document.getElementById('lightIntensity').addEventListener('input', (e) => {
         const intensity = parseFloat(e.target.value);
         mainLight.intensity = intensity;
-        ambientLight.intensity = intensity * 0.5;
+        ambientLight.intensity = intensity * 0.3; 
+        fillLight.intensity = intensity * 0.5;
     });
 
     animate();
 }
 
-// Lógica de carga de archivos
 function loadFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -125,10 +133,11 @@ function loadModel(loader, url, ext) {
 function loadSTL(url) {
     const loader = new THREE.STLLoader();
     loader.load(url, (geometry) => {
+        // STL no trae texturas, usamos un StandardMaterial decente
         const material = new THREE.MeshStandardMaterial({ 
-            color: 0x888888, 
-            roughness: 0.4, 
-            metalness: 0.2 
+            color: 0xcccccc, 
+            roughness: 0.3, 
+            metalness: 0.4 
         });
         const mesh = new THREE.Mesh(geometry, material);
         geometry.center();
@@ -139,7 +148,6 @@ function loadSTL(url) {
 }
 
 function onModelLoaded(object) {
-    // Eliminar modelo anterior si existe
     const prevModel = scene.getObjectByName('LoadedModel');
     if (prevModel) {
         prevModel.traverse(o => {
@@ -156,7 +164,6 @@ function onModelLoaded(object) {
     mixer = null;
     let statusHTML = '';
     
-    // Animaciones
     if (object.animations && object.animations.length > 0) {
         mixer = new THREE.AnimationMixer(object);
         const action = mixer.clipAction(object.animations[0]);
@@ -168,22 +175,26 @@ function onModelLoaded(object) {
     
     document.getElementById('status').innerHTML = statusHTML;
 
-    // Ajustes de materiales y sombras
+    // Arreglo en la lectura de materiales
     object.traverse(function (child) {
         if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             if (child.material) {
-                child.material.side = THREE.DoubleSide;
-                if (!child.material.map) {
-                    child.material.roughness = 0.6;
-                    child.material.metalness = 0.2;
-                }
+                // Manejar en caso de que el material sea un array de materiales
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                
+                materials.forEach(mat => {
+                    mat.side = THREE.DoubleSide;
+                    if (!mat.map && mat.isMeshStandardMaterial) {
+                        mat.roughness = 0.5;
+                        mat.metalness = 0.1;
+                    }
+                });
             }
         }
     });
 
-    // Centrado y escalado automático de cámara
     const box = new THREE.Box3().setFromObject(object);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
@@ -219,6 +230,10 @@ function onModelLoaded(object) {
     scene.fog.far = cameraDist * 5;
 
     document.getElementById('loader').style.display = 'none';
+    
+    if(window.innerWidth <= 768) {
+        document.getElementById('ui-container').classList.add('collapsed');
+    }
 }
 
 function onProgress(xhr) {
@@ -249,5 +264,4 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// Iniciar aplicación
 init();
