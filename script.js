@@ -1,17 +1,23 @@
-let scene, camera, renderer, controls, mixer;
+// Variables globales
+let scene, camera, renderer, controls, mixer, grid, mainLight, ambientLight;
 const clock = new THREE.Clock();
 
 function init() {
+    // Escena
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x131316); // Fondo ligeramente más oscuro y neutral
-    scene.fog = new THREE.Fog(0x131316, 10, 100);
-    const grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
+    scene.background = new THREE.Color(0x131316); 
+    scene.fog = new THREE.Fog(0x131316, 10, 100); 
+
+    // Cuadrícula
+    grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
     grid.position.y = -0.01; 
     scene.add(grid);
 
-    const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    // Luces
+    ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     scene.add(ambientLight);
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+
+    mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
     mainLight.position.set(5, 10, 7);
     mainLight.castShadow = true;
     mainLight.shadow.mapSize.width = 2048; 
@@ -27,12 +33,14 @@ function init() {
     rimLight.position.set(0, 5, -10);
     scene.add(rimLight);
 
+    // Cámara
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
     camera.position.set(8, 5, 8);
+
+    // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -40,18 +48,38 @@ function init() {
     renderer.toneMappingExposure = 1.0;
     document.body.appendChild(renderer.domElement);
 
+    // Controles de cámara
     controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+    controls.enableDamping = true; 
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0, 0);
     controls.update();
 
+    // Eventos de interfaz
     window.addEventListener('resize', onWindowResize);
     document.getElementById('fileInput').addEventListener('change', loadFile);
+
+    // --- EVENTOS DE CONTROLES DE ENTORNO ---
+    document.getElementById('bgColor').addEventListener('input', (e) => {
+        const newColor = new THREE.Color(e.target.value);
+        scene.background = newColor;
+        scene.fog.color = newColor;
+    });
+
+    document.getElementById('gridToggle').addEventListener('change', (e) => {
+        grid.visible = e.target.checked;
+    });
+
+    document.getElementById('lightIntensity').addEventListener('input', (e) => {
+        const intensity = parseFloat(e.target.value);
+        mainLight.intensity = intensity;
+        ambientLight.intensity = intensity * 0.5;
+    });
 
     animate();
 }
 
+// Lógica de carga de archivos
 function loadFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -61,6 +89,7 @@ function loadFile(event) {
     
     const url = URL.createObjectURL(file);
     const extension = file.name.split('.').pop().toLowerCase();
+    
     setTimeout(() => {
         try {
             switch (extension) {
@@ -110,6 +139,7 @@ function loadSTL(url) {
 }
 
 function onModelLoaded(object) {
+    // Eliminar modelo anterior si existe
     const prevModel = scene.getObjectByName('LoadedModel');
     if (prevModel) {
         prevModel.traverse(o => {
@@ -126,6 +156,7 @@ function onModelLoaded(object) {
     mixer = null;
     let statusHTML = '';
     
+    // Animaciones
     if (object.animations && object.animations.length > 0) {
         mixer = new THREE.AnimationMixer(object);
         const action = mixer.clipAction(object.animations[0]);
@@ -136,6 +167,8 @@ function onModelLoaded(object) {
     }
     
     document.getElementById('status').innerHTML = statusHTML;
+
+    // Ajustes de materiales y sombras
     object.traverse(function (child) {
         if (child.isMesh) {
             child.castShadow = true;
@@ -149,6 +182,8 @@ function onModelLoaded(object) {
             }
         }
     });
+
+    // Centrado y escalado automático de cámara
     const box = new THREE.Box3().setFromObject(object);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
@@ -159,7 +194,8 @@ function onModelLoaded(object) {
     
     const pivot = new THREE.Group();
     pivot.add(object);
-    pivot.name = 'LoadedModel';
+    pivot.name = 'LoadedModel'; 
+    
     const yOffset = size.y / 2;
     object.position.y += yOffset; 
 
@@ -175,6 +211,7 @@ function onModelLoaded(object) {
 
     camera.position.copy(finalPos);
     camera.lookAt(0, size.y / 2, 0);
+    
     controls.target.set(0, size.y / 2, 0);
     controls.update();
     
@@ -212,4 +249,5 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// Iniciar aplicación
 init();
