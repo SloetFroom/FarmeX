@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor FarmeX</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
@@ -27,17 +28,32 @@
         <label class="custom-file-upload">
             <input type="file" id="fileInput" accept=".fbx, .obj, .gltf, .glb, .stl">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-            Subir Modelo
+            Cargar Modelo
         </label>
          
         <div id="status">
             <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Esperando archivo
+            Esperando archivo...
         </div>
         
         <div class="info-text">
             Formatos soportados:<br>
             FBX, OBJ, GLTF, GLB, STL
+        </div>
+
+        <div class="controls-section">
+            <div class="control-group">
+                <label>Fondo</label>
+                <input type="color" id="bgColor" value="#131316">
+            </div>
+            <div class="control-group">
+                <label>Cuadrícula</label>
+                <input type="checkbox" id="gridToggle" checked>
+            </div>
+            <div class="control-group">
+                <label>Luz</label>
+                <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
+            </div>
         </div>
     </div>
 
