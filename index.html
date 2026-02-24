@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor FarmeX</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>Visor 3D FarmeX | Análisis de Modelos Agrícolas</title>
+    <meta name="description" content="Visor 3D profesional de FarmeX para análisis de modelos, conteo de polígonos y visualización técnica en formatos GLB, GLTF, OBJ, FBX y STL.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
     
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
@@ -18,56 +18,62 @@
 </head>
 <body>
 
-    <div id="ui-container">
-        <div class="header-container">
-            <h1>
-                <svg class="title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                Visor FarmeX
-            </h1>
-            <button id="toggle-btn" aria-label="Ocultar panel">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-            </button>
-        </div>
-        
-        <div id="ui-content">
-            <label class="custom-file-upload">
-                <input type="file" id="fileInput" accept=".fbx, .obj, .gltf, .glb, .stl">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                Subir Modelo
-            </label>
-            
-            <div id="status">
-                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Esperando archivo...
-            </div>
-            
-            <div class="info-text">
-                Formatos soportados:<br>
-                FBX, OBJ, GLTF, GLB, STL
-            </div>
+    <aside id="sidebar">
+        <header>
+            <h1>Visor FarmeX</h1>
+            <p class="description">Plataforma profesional para la inspección geométrica y visualización de modelos 3D orientada a soluciones FarmeX.</p>
+        </header>
 
-            <div class="controls-section">
-                <div class="control-group">
-                    <label>Fondo</label>
-                    <input type="color" id="bgColor" value="#131316">
-                </div>
-                <div class="control-group">
-                    <label>Cuadrícula</label>
-                    <input type="checkbox" id="gridToggle" checked>
-                </div>
-                <div class="control-group">
-                    <label>Luz</label>
-                    <input type="range" id="lightIntensity" min="0" max="5" step="0.1" value="2.5">
-                </div>
+        <section class="upload-section">
+            <label class="custom-file-upload">
+                <input type="file" id="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Subir Modelo 3D
+            </label>
+            <div class="recommendation">
+                <span class="badge">Recomendado</span> Utilice formato <strong>.GLB</strong> para un mejor rendimiento y soporte de materiales.
             </div>
-        </div>
-    </div>
+            <div id="status">Esperando archivo...</div>
+        </section>
+
+        <section class="stats-section" id="statsPanel">
+            <h3>Estadísticas del Modelo</h3>
+            <ul class="stats-list">
+                <li><span>Formato:</span> <strong id="stat-format">-</strong></li>
+                <li><span>Tamaño:</span> <strong id="stat-size">-</strong></li>
+                <li><span>Vértices:</span> <strong id="stat-vertices">-</strong></li>
+                <li><span>Triángulos:</span> <strong id="stat-triangles">-</strong></li>
+                <li><span>Materiales:</span> <strong id="stat-materials">-</strong></li>
+                <li><span>Texturas:</span> <strong id="stat-textures">-</strong></li>
+            </ul>
+        </section>
+
+        <section class="controls-section">
+            <h3>Controles</h3>
+            <div class="control-group">
+                <label for="lightIntensity">Intensidad de Luz:</label>
+                <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
+            </div>
+            <div class="button-grid">
+                <button id="btn-wireframe" class="btn-secondary">Wireframe: OFF</button>
+                <button id="btn-autorotate" class="btn-secondary">Rotación: OFF</button>
+                <button id="btn-theme" class="btn-secondary">Modo: Oscuro</button>
+                <button id="btn-reset" class="btn-secondary">Reset Cámara</button>
+            </div>
+        </section>
+
+        <footer>
+            Visor FarmeX v1.0.0 &copy; 2026
+        </footer>
+    </aside>
+
+    <main id="canvas-container"></main>
 
     <div id="loader">
         <div class="spinner"></div>
-        <div class="loader-text">PROCESANDO</div>
+        <div class="loader-text" id="loaderText">PROCESANDO</div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
