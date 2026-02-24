@@ -1,109 +1,89 @@
-let scene, camera, renderer, controls, mixer, grid, mainLight, ambientLight, fillLight;
+let scene, camera, renderer, controls, mixer;
+let mainLight;
+let currentModel = null;
+let isWireframe = false;
+let initialCameraPos = new THREE.Vector3();
+let initialControlsTarget = new THREE.Vector3();
+
 const clock = new THREE.Clock();
 
-// --- SOLUCIÓN PARA MÓVILES ---
-const toggleBtn = document.getElementById('toggle-btn');
-const uiContainer = document.getElementById('ui-container');
-
-function handleToggle(e) {
-    // Evita que el evento se propague al canvas de Three.js
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-    uiContainer.classList.toggle('collapsed');
-}
-
-// Escuchamos ambos: click para PC y touchstart para respuesta inmediata en móvil
-toggleBtn.addEventListener('click', handleToggle);
-toggleBtn.addEventListener('touchstart', handleToggle, { passive: false });
-// ------------------------------
-
 function init() {
+    const container = document.getElementById('canvas-container');
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x131316); 
-    scene.fog = new THREE.Fog(0x131316, 10, 100); 
+    scene.background = new THREE.Color(0x0f0f11);
+    scene.fog = new THREE.Fog(0x0f0f11, 10, 100);
 
-    // Cuadrícula
-    grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
+    const grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
     grid.position.y = -0.01; 
     scene.add(grid);
 
-    // --- SISTEMA DE ILUMINACIÓN ---
-    ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-    hemiLight.position.set(0, 20, 0);
-    scene.add(hemiLight);
+    mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    mainLight.position.set(5, 10, 7);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048; 
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.bias = -0.0001;
+    scene.add(mainLight);
 
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.set(8, 5, 8);
-    scene.add(camera); 
-    
-    mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    mainLight.position.set(1, 1, 2);
-    camera.add(mainLight);
-
-    fillLight = new THREE.DirectionalLight(0xddeeff, 1.2);
-    fillLight.position.set(-5, 5, -5);
+    const fillLight = new THREE.DirectionalLight(0xddeeff, 0.5);
+    fillLight.position.set(-5, 5, 5);
     scene.add(fillLight);
 
-    // Renderer
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 10000);
+    camera.position.set(8, 5, 8);
+
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; 
-    renderer.toneMappingExposure = 1.0;
-    renderer.physicallyCorrectLights = true; 
     
-    document.body.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
-    // Controles
     controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; 
+    controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.target.set(0, 0, 0);
-    controls.update();
-
-    // Eventos de UI
-    window.addEventListener('resize', onWindowResize);
-    document.getElementById('fileInput').addEventListener('change', loadFile);
-
-    document.getElementById('bgColor').addEventListener('input', (e) => {
-        const newColor = new THREE.Color(e.target.value);
-        scene.background = newColor;
-        scene.fog.color = newColor; 
-    });
-
-    document.getElementById('gridToggle').addEventListener('change', (e) => {
-        grid.visible = e.target.checked;
-    });
-
-    document.getElementById('lightIntensity').addEventListener('input', (e) => {
-        const intensity = parseFloat(e.target.value);
-        mainLight.intensity = intensity;
-        ambientLight.intensity = intensity * 0.3; 
-        fillLight.intensity = intensity * 0.5;
-    });
-
+    
+    setupEventListeners();
     animate();
 }
 
-function loadFile(event) {
+function setupEventListeners() {
+    window.addEventListener('resize', onWindowResize);
+    document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+    
+    // Controles UI
+    document.getElementById('lightIntensity').addEventListener('input', (e) => {
+        if(mainLight) mainLight.intensity = parseFloat(e.target.value);
+    });
+
+    document.getElementById('btn-wireframe').addEventListener('click', toggleWireframe);
+    document.getElementById('btn-reset').addEventListener('click', resetCamera);
+    document.getElementById('btn-autorotate').addEventListener('click', toggleAutoRotate);
+    document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+}
+
+function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Calcular tamaño de archivo
+    const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+    document.getElementById('stat-size').innerText = fileSize;
+
     document.getElementById('loader').style.display = 'flex';
-    document.getElementById('status').innerHTML = `Leyendo: ${file.name}`;
+    document.getElementById('status').innerHTML = `<span style="color:var(--primary)">Cargando: ${file.name}</span>`;
     
     const url = URL.createObjectURL(file);
     const extension = file.name.split('.').pop().toLowerCase();
     
+    document.getElementById('stat-format').innerText = extension.toUpperCase();
+
     setTimeout(() => {
         try {
             switch (extension) {
@@ -112,8 +92,7 @@ function loadFile(event) {
                 case 'glb': loadModel(new THREE.GLTFLoader(), url, extension); break;
                 case 'obj': loadModel(new THREE.OBJLoader(), url, extension); break;
                 case 'stl': loadSTL(url); break;
-                default:
-                    throw new Error("Formato no soportado.");
+                default: throw new Error("Formato no soportado.");
             }
         } catch (e) {
             onError(e);
@@ -123,14 +102,11 @@ function loadFile(event) {
 
 function loadModel(loader, url, ext) {
     loader.load(url, (loadedData) => {
-        let object;
+        let object = (ext === 'gltf' || ext === 'glb') ? loadedData.scene : loadedData;
         if (ext === 'gltf' || ext === 'glb') {
-            object = loadedData.scene;
             if (loadedData.animations && loadedData.animations.length > 0) {
                 object.animations = loadedData.animations;
             }
-        } else {
-            object = loadedData;
         }
         onModelLoaded(object);
     }, onProgress, onError);
@@ -139,11 +115,7 @@ function loadModel(loader, url, ext) {
 function loadSTL(url) {
     const loader = new THREE.STLLoader();
     loader.load(url, (geometry) => {
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0xcccccc, 
-            roughness: 0.3, 
-            metalness: 0.4 
-        });
+        const material = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.2 });
         const mesh = new THREE.Mesh(geometry, material);
         geometry.center();
         const group = new THREE.Group();
@@ -153,116 +125,157 @@ function loadSTL(url) {
 }
 
 function onModelLoaded(object) {
-    const prevModel = scene.getObjectByName('LoadedModel');
-    if (prevModel) {
-        prevModel.traverse(o => {
+    if (currentModel) {
+        currentModel.traverse(o => {
             if (o.geometry) o.geometry.dispose();
             if (o.material) {
-                if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
-                else o.material.dispose();
+                Array.isArray(o.material) ? o.material.forEach(m => m.dispose()) : o.material.dispose();
             }
         });
-        scene.remove(prevModel);
+        scene.remove(currentModel.parent); // Remover el pivot
     }
 
     object.name = 'LoadedModel';
     mixer = null;
-    let statusHTML = '';
+    isWireframe = false;
+    document.getElementById('btn-wireframe').classList.remove('active');
     
     if (object.animations && object.animations.length > 0) {
         mixer = new THREE.AnimationMixer(object);
-        const action = mixer.clipAction(object.animations[0]);
-        action.play();
-        statusHTML = `<span class="status-success">▶</span> Animación activa`;
-    } else {
-        statusHTML = `<span class="status-success">✓</span> Modelo cargado`;
+        mixer.clipAction(object.animations[0]).play();
     }
     
-    document.getElementById('status').innerHTML = statusHTML;
+    document.getElementById('status').innerHTML = `<span style="color:var(--success)">✓ Modelo cargado exitosamente</span>`;
+    
+    let vertices = 0, triangles = 0;
+    let materialsMap = new Set();
+    let texturesMap = new Set();
 
     object.traverse(function (child) {
         if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+            
+            // Conteo geométrico
+            if(child.geometry) {
+                vertices += child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
+                if(child.geometry.index) {
+                    triangles += child.geometry.index.count / 3;
+                } else if(child.geometry.attributes.position) {
+                    triangles += child.geometry.attributes.position.count / 3;
+                }
+            }
+
+            // Materiales y Texturas
             if (child.material) {
-                const materials = Array.isArray(child.material) ? child.material : [child.material];
-                materials.forEach(mat => {
-                    mat.side = THREE.DoubleSide;
-                    if (!mat.map && mat.isMeshStandardMaterial) {
-                        mat.roughness = 0.5;
-                        mat.metalness = 0.1;
-                    }
+                child.material.side = THREE.DoubleSide;
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach(mat => {
+                    materialsMap.add(mat.uuid);
+                    if(mat.map) texturesMap.add(mat.map.uuid);
+                    if(mat.normalMap) texturesMap.add(mat.normalMap.uuid);
+                    if(mat.roughnessMap) texturesMap.add(mat.roughnessMap.uuid);
+                    if(mat.metalnessMap) texturesMap.add(mat.metalnessMap.uuid);
                 });
             }
         }
     });
 
+    // Actualizar UI de Estadísticas
+    document.getElementById('stat-vertices').innerText = vertices.toLocaleString();
+    document.getElementById('stat-triangles').innerText = triangles.toLocaleString();
+    document.getElementById('stat-materials').innerText = materialsMap.size;
+    document.getElementById('stat-textures').innerText = texturesMap.size;
+
     const box = new THREE.Box3().setFromObject(object);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     
-    object.position.x = -center.x;
-    object.position.y = -center.y; 
-    object.position.z = -center.z;
+    object.position.set(-center.x, -center.y, -center.z);
     
     const pivot = new THREE.Group();
     pivot.add(object);
-    pivot.name = 'LoadedModel'; 
-    
-    const yOffset = size.y / 2;
-    object.position.y += yOffset; 
-
+    pivot.position.y += size.y / 2; 
     scene.add(pivot);
+    currentModel = object;
 
+    // Configuración de Cámara
     const maxDim = Math.max(size.x, size.y, size.z);
     const fov = camera.fov * (Math.PI / 180);
-    let cameraDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    cameraDist *= 1.8;
+    let cameraDist = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.8;
     
     const direction = new THREE.Vector3(1, 0.6, 1).normalize();
-    const finalPos = direction.multiplyScalar(cameraDist);
+    initialCameraPos.copy(direction.multiplyScalar(cameraDist));
+    initialControlsTarget.set(0, size.y / 2, 0);
 
-    camera.position.copy(finalPos);
-    camera.lookAt(0, size.y / 2, 0);
-    
-    controls.target.set(0, size.y / 2, 0);
-    controls.update();
-    
+    resetCamera();
     scene.fog.near = cameraDist * 2;
     scene.fog.far = cameraDist * 5;
-
     document.getElementById('loader').style.display = 'none';
-    
-    // Auto-colapsar en móviles al cargar
-    if(window.innerWidth <= 768) {
-        uiContainer.classList.add('collapsed');
-    }
 }
 
 function onProgress(xhr) {
     if(xhr.lengthComputable) {
         const percent = Math.round((xhr.loaded / xhr.total) * 100);
-        document.getElementById('status').innerText = `Cargando: ${percent}%`;
+        document.getElementById('loaderText').innerText = `CARGANDO: ${percent}%`;
     }
 }
 
 function onError(error) {
     console.error(error);
     document.getElementById('loader').style.display = 'none';
-    document.getElementById('status').innerHTML = `<span class="status-error">⚠ Error</span>`;
+    document.getElementById('status').innerHTML = `<span style="color:var(--error)">⚠ Error al cargar</span>`;
+}
+
+function toggleWireframe() {
+    if(!currentModel) return;
+    isWireframe = !isWireframe;
+    currentModel.traverse(child => {
+        if(child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(mat => mat.wireframe = isWireframe);
+        }
+    });
+    const btn = document.getElementById('btn-wireframe');
+    btn.innerText = `Wireframe: ${isWireframe ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', isWireframe);
+}
+
+function resetCamera() {
+    camera.position.copy(initialCameraPos);
+    controls.target.copy(initialControlsTarget);
+    controls.update();
+}
+
+function toggleAutoRotate() {
+    controls.autoRotate = !controls.autoRotate;
+    const btn = document.getElementById('btn-autorotate');
+    btn.innerText = `Rotación: ${controls.autoRotate ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', controls.autoRotate);
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    const btn = document.getElementById('btn-theme');
+    btn.innerText = `Modo: ${isLight ? 'Claro' : 'Oscuro'}`;
+    
+    const color = isLight ? 0xf3f4f6 : 0x0f0f11;
+    scene.background.setHex(color);
+    scene.fog.color.setHex(color);
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const container = document.getElementById('canvas-container');
+    camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(container.clientWidth, container.clientHeight);
 }
 
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     if (mixer) mixer.update(delta);
-    
     controls.update();
     renderer.render(scene, camera);
 }
