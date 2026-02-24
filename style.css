@@ -100,3 +100,37 @@ footer { margin-top: auto; font-size: 11px; color: var(--text-muted); text-align
 }
 .loader-text { margin-top: 16px; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 2px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* =========================================
+   Responsive / Diseño para Móviles
+   ========================================= */
+@media (max-width: 768px) {
+    body {
+        /* Invierte la columna para que el canvas quede arriba y el panel abajo */
+        flex-direction: column-reverse; 
+    }
+
+    #sidebar {
+        width: 100%;
+        height: 45vh; /* El panel ocupa el 45% de la pantalla abajo */
+        border-right: none;
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.2);
+        padding: 16px;
+        gap: 16px;
+    }
+
+    #canvas-container {
+        width: 100%;
+        height: 55vh; /* El canvas ocupa el 55% de la pantalla arriba */
+        flex: none; /* Desactivamos el flex: 1 para forzar la altura */
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+
+    .custom-file-upload {
+        padding: 12px;
+    }
+}
