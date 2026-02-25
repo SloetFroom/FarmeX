@@ -1,30 +1,32 @@
 let scene, camera, renderer, controls, mixer;
-let mainLight;
+let mainLight, ambientLight;
 let currentModel = null;
 let isWireframe = false;
 let initialCameraPos = new THREE.Vector3();
 let initialControlsTarget = new THREE.Vector3();
 let sidebarHidden = false;
+let grid;
 
 const clock = new THREE.Clock();
 
 function init() {
     const container = document.getElementById('canvas-container');
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f0f11);
-    scene.fog = new THREE.Fog(0x0f0f11, 10, 100);
+    scene.background = new THREE.Color(0x0a0a0d);
+    scene.fog = new THREE.Fog(0x0a0a0d, 10, 100);
 
-    const grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
-    grid.position.y = -0.01; 
+    // Cuadrícula
+    grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
+    grid.position.y = -0.01;
     scene.add(grid);
 
-    const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     scene.add(ambientLight);
 
     mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
     mainLight.position.set(5, 10, 7);
     mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 2048; 
+    mainLight.shadow.mapSize.width = 2048;
     mainLight.shadow.mapSize.height = 2048;
     mainLight.shadow.bias = -0.0001;
     scene.add(mainLight);
@@ -32,6 +34,10 @@ function init() {
     const fillLight = new THREE.DirectionalLight(0xddeeff, 0.5);
     fillLight.position.set(-5, 5, 5);
     scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffaa00, 0.5);
+    rimLight.position.set(0, 5, -10);
+    scene.add(rimLight);
 
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 10000);
     camera.position.set(8, 5, 8);
@@ -42,14 +48,15 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; 
-    
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
     container.appendChild(renderer.domElement);
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    
+
     setupEventListeners();
     animate();
 }
@@ -61,11 +68,25 @@ function setupEventListeners() {
     // Toggle Sidebar
     document.getElementById('toggleSidebar').addEventListener('click', toggleSidebar);
     
-    // Controles UI
-    document.getElementById('lightIntensity').addEventListener('input', (e) => {
-        if(mainLight) mainLight.intensity = parseFloat(e.target.value);
+    // Controles Avanzados de Entorno
+    document.getElementById('bgColor').addEventListener('input', (e) => {
+        const newColor = new THREE.Color(e.target.value);
+        scene.background = newColor;
+        scene.fog.color = newColor;
     });
 
+    document.getElementById('gridToggle').addEventListener('change', (e) => {
+        if (grid) grid.visible = e.target.checked;
+    });
+
+    // Luz
+    document.getElementById('lightIntensity').addEventListener('input', (e) => {
+        const intensity = parseFloat(e.target.value);
+        if (mainLight) mainLight.intensity = intensity;
+        if (ambientLight) ambientLight.intensity = intensity * 0.5;
+    });
+
+    // Controles UI
     document.getElementById('btn-wireframe').addEventListener('click', toggleWireframe);
     document.getElementById('btn-reset').addEventListener('click', resetCamera);
     document.getElementById('btn-autorotate').addEventListener('click', toggleAutoRotate);
