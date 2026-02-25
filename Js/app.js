@@ -4,6 +4,7 @@ let currentModel = null;
 let isWireframe = false;
 let initialCameraPos = new THREE.Vector3();
 let initialControlsTarget = new THREE.Vector3();
+let sidebarHidden = false;
 
 const clock = new THREE.Clock();
 
@@ -57,6 +58,9 @@ function setupEventListeners() {
     window.addEventListener('resize', onWindowResize);
     document.getElementById('fileInput').addEventListener('change', handleFileUpload);
     
+    // Toggle Sidebar
+    document.getElementById('toggleSidebar').addEventListener('click', toggleSidebar);
+    
     // Controles UI
     document.getElementById('lightIntensity').addEventListener('input', (e) => {
         if(mainLight) mainLight.intensity = parseFloat(e.target.value);
@@ -66,6 +70,22 @@ function setupEventListeners() {
     document.getElementById('btn-reset').addEventListener('click', resetCamera);
     document.getElementById('btn-autorotate').addEventListener('click', toggleAutoRotate);
     document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebarHidden = !sidebarHidden;
+    
+    if (sidebarHidden) {
+        sidebar.classList.add('hidden');
+    } else {
+        sidebar.classList.remove('hidden');
+    }
+    
+    // Esperar a que la animación termine antes de hacer resize
+    setTimeout(() => {
+        onWindowResize();
+    }, 300);
 }
 
 function handleFileUpload(event) {
@@ -267,9 +287,16 @@ function toggleTheme() {
 
 function onWindowResize() {
     const container = document.getElementById('canvas-container');
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    if (!container || !renderer || !camera) return;
+    
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    if (width > 0 && height > 0) {
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
 }
 
 function animate() {

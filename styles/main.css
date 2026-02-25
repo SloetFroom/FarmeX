@@ -8,6 +8,7 @@
     --primary-hover: #2563eb;
     --success: #10b981;
     --error: #ef4444;
+    --sidebar-width: 320px;
 }
 
 body.light-theme {
@@ -30,7 +31,7 @@ body {
 
 /* Sidebar Styling */
 #sidebar {
-    width: 320px;
+    width: var(--sidebar-width);
     height: 100vh;
     background: var(--panel-bg);
     backdrop-filter: blur(12px);
@@ -43,6 +44,33 @@ body {
     overflow-y: auto;
     z-index: 10;
     box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+    position: relative;
+    transition: transform 0.3s ease, margin-left 0.3s ease;
+}
+
+/* Toggle Button */
+.toggle-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 11;
+}
+
+.toggle-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.toggle-btn:hover {
+    color: var(--primary-hover);
 }
 
 h1 { font-size: 20px; margin: 0 0 8px 0; font-weight: 700; color: var(--primary); }
@@ -102,35 +130,117 @@ footer { margin-top: auto; font-size: 11px; color: var(--text-muted); text-align
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* =========================================
+   Responsive / Diseño para Tablets
+   ========================================= */
+@media (max-width: 1024px) {
+    #sidebar {
+        width: 280px;
+    }
+}
+
+/* =========================================
    Responsive / Diseño para Móviles
    ========================================= */
 @media (max-width: 768px) {
+    :root {
+        --sidebar-width: 100%;
+    }
+
     body {
-        /* Invierte la columna para que el canvas quede arriba y el panel abajo */
-        flex-direction: column-reverse; 
+        flex-direction: column;
     }
 
     #sidebar {
         width: 100%;
-        height: 45vh; /* El panel ocupa el 45% de la pantalla abajo */
+        height: auto;
+        max-height: 50vh;
         border-right: none;
         border-top: 1px solid var(--border-color);
         box-shadow: 0 -4px 24px rgba(0,0,0,0.2);
         padding: 16px;
         gap: 16px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        transform: translateY(0);
+        transition: transform 0.3s ease;
+    }
+
+    #sidebar.hidden {
+        transform: translateY(100%);
+    }
+
+    .toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        top: -40px;
+        right: 16px;
+        background: var(--panel-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px 8px 0 0;
+        height: 40px;
+    }
+
+    .toggle-btn:hover {
+        background: rgba(59, 130, 246, 0.1);
     }
 
     #canvas-container {
         width: 100%;
-        height: 55vh; /* El canvas ocupa el 55% de la pantalla arriba */
-        flex: none; /* Desactivamos el flex: 1 para forzar la altura */
+        height: 100vh;
+        flex: none;
+        position: relative;
     }
 
     h1 {
-        font-size: 18px;
+        font-size: 16px;
+    }
+
+    .description {
+        font-size: 11px;
+    }
+
+    h3 {
+        font-size: 12px;
     }
 
     .custom-file-upload {
         padding: 12px;
+        font-size: 13px;
+    }
+
+    .stats-list {
+        gap: 6px;
+    }
+
+    .stats-list li {
+        font-size: 12px;
+    }
+
+    .control-group {
+        margin-bottom: 12px;
+    }
+
+    .control-group label {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .button-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .btn-secondary {
+        padding: 6px;
+        font-size: 11px;
+    }
+
+    footer {
+        font-size: 10px;
+        padding-top: 12px;
     }
 }
