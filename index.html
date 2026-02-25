@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor 3D FarmeX | Análisis de Modelos Agrícolas</title>
+    <meta name="description" content="Visor 3D profesional de FarmeX para análisis de modelos, conteo de polígonos y visualización técnica en formatos GLB, GLTF, OBJ, FBX y STL.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/STLLoader.js"></script>
+</head>
+<body>
+
+    <aside id="sidebar">
+        <header>
+            <h1>Visor 3D FarmeX</h1>
+            <p class="description">Plataforma profesional para la inspección geométrica y visualización de modelos 3D orientada a soluciones FarmeX.</p>
+        </header>
+
+        <section class="upload-section">
+            <label class="custom-file-upload">
+                <input type="file" id="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Subir Modelo 3D
+            </label>
+            <div class="recommendation">
+                <span class="badge">Recomendado</span> Utilice formato <strong>.GLB</strong> para un mejor rendimiento y soporte de materiales.
+            </div>
+            <div id="status">Esperando archivo...</div>
+        </section>
+
+        <section class="stats-section" id="statsPanel">
+            <h3>Estadísticas del Modelo</h3>
+            <ul class="stats-list">
+                <li><span>Formato:</span> <strong id="stat-format">-</strong></li>
+                <li><span>Tamaño:</span> <strong id="stat-size">-</strong></li>
+                <li><span>Vértices:</span> <strong id="stat-vertices">-</strong></li>
+                <li><span>Triángulos:</span> <strong id="stat-triangles">-</strong></li>
+                <li><span>Materiales:</span> <strong id="stat-materials">-</strong></li>
+                <li><span>Texturas:</span> <strong id="stat-textures">-</strong></li>
+            </ul>
+        </section>
+
+        <section class="controls-section">
+            <h3>Controles</h3>
+            <div class="control-group">
+                <label for="lightIntensity">Intensidad de Luz:</label>
+                <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
+            </div>
+            <div class="button-grid">
+                <button id="btn-wireframe" class="btn-secondary">Wireframe: OFF</button>
+                <button id="btn-autorotate" class="btn-secondary">Rotación: OFF</button>
+                <button id="btn-theme" class="btn-secondary">Modo: Oscuro</button>
+                <button id="btn-reset" class="btn-secondary">Reset Cámara</button>
+            </div>
+        </section>
+
+        <footer>
+            Visor FarmeX v1.0.0 &copy; 2026
+        </footer>
+    </aside>
+
+    <main id="canvas-container"></main>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div class="loader-text" id="loaderText">PROCESANDO</div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
