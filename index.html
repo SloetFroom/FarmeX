@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor 3D FarmeX | Análisis de Modelos Agrícolas</title>
-    <meta name="description" content="Visor 3D profesional de FarmeX para análisis de modelos, conteo de polígonos y visualización técnica en formatos GLB, GLTF, OBJ, FBX y STL.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Visor 3D Profesional | FarmeX</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles/main.css">
     
+    <link rel="stylesheet" href="style.css">
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
@@ -18,80 +18,173 @@
 </head>
 <body>
 
-    <aside id="sidebar">
-        <button id="toggleSidebar" class="toggle-btn" title="Mostrar/Ocultar panel">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="9" y1="6" x2="20" y2="6"></line>
-                <line x1="9" y1="12" x2="20" y2="12"></line>
-                <line x1="9" y1="18" x2="20" y2="18"></line>
-                <line x1="5" y1="6" x2="5" y2="6.01"></line>
-                <line x1="5" y1="12" x2="5" y2="12.01"></line>
-                <line x1="5" y1="18" x2="5" y2="18.01"></line>
-            </svg>
-        </button>
-        <header>
-            <h1>Visor 3D FarmeX</h1>
-            <p class="description">Plataforma profesional para la inspección geométrica y visualización de modelos 3D orientada a soluciones FarmeX.</p>
-        </header>
+    <main id="canvas-container"></main>
 
-        <section class="upload-section">
-            <label class="custom-file-upload">
-                <input type="file" id="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                Subir Modelo 3D
-            </label>
-            <div class="recommendation">
-                <span class="badge">Recomendado</span> Utilice formato <strong>.GLB</strong> para un mejor rendimiento y soporte de materiales.
-            </div>
-            <div id="status">Esperando archivo...</div>
-        </section>
-
-        <section class="stats-section" id="statsPanel">
-            <h3>Estadísticas del Modelo</h3>
-            <ul class="stats-list">
-                <li><span>Formato:</span> <strong id="stat-format">-</strong></li>
-                <li><span>Tamaño:</span> <strong id="stat-size">-</strong></li>
-                <li><span>Vértices:</span> <strong id="stat-vertices">-</strong></li>
-                <li><span>Triángulos:</span> <strong id="stat-triangles">-</strong></li>
-                <li><span>Materiales:</span> <strong id="stat-materials">-</strong></li>
-                <li><span>Texturas:</span> <strong id="stat-textures">-</strong></li>
-            </ul>
-        </section>
-
-        <section class="controls-section">
-            <h3>Controles</h3>
-            <div class="control-group">
-                <label for="lightIntensity">Intensidad de Luz:</label>
-                <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
-            </div>
-            <div class="control-group">
-                <label>Fondo:</label>
-                <input type="color" id="bgColor" value="#0a0a0d" title="Cambiar color de fondo">
-            </div>
-            <div class="control-group">
-                <label for="gridToggle">Cuadrícula:</label>
-                <input type="checkbox" id="gridToggle" checked>
-            </div>
-            <div class="button-grid">
-                <button id="btn-wireframe" class="btn-secondary">Wireframe: OFF</button>
-                <button id="btn-autorotate" class="btn-secondary">Rotación: OFF</button>
-                <button id="btn-theme" class="btn-secondary">Modo: Oscuro</button>
-                <button id="btn-reset" class="btn-secondary">Reset Cámara</button>
-            </div>
-        </section>
-
-        <footer>
-            Visor FarmeX v1.0.0 &copy; 2026
-        </footer>
+    <aside id="left-toolbar">
+        <label class="upload-btn" title="Subir Modelo 3D">
+            <input type="file" class="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </label>
     </aside>
 
-    <main id="canvas-container"></main>
+    <div id="right-ui-layer">
+        <div id="controls-panel" class="panel">
+            <div class="panel-header-dark" onclick="toggleControlsDesktop()">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg> Controles
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="control-row">
+                    <span>Intensidad de Luz:</span>
+                    <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
+                </div>
+                <div class="control-row">
+                    <span>Color de Fondo:</span>
+                    <div class="color-picker-wrapper"><input type="color" id="bgColor" value="#000000"></div>
+                </div>
+                <div class="control-row">
+                    <span>Cuadricula:</span>
+                    <div class="radio-group">
+                        <label class="radio-item"><input type="radio" name="grid" value="si" checked> Si</label>
+                        <label class="radio-item"><input type="radio" name="grid" value="no"> No</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="gear-btn" onclick="toggleControlsDesktop()" title="Configuración de Entorno">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </button>
+
+        <div class="panel-column">
+            <div class="panel">
+                <div class="panel-header-blue">Estadísticas del Modelo</div>
+                <div class="panel-body">
+                    <div class="stat-row">Formato: <strong class="stat-format">-</strong></div>
+                    <div class="stat-row">Tamaño: <strong class="stat-size">-</strong></div>
+                    <div class="stat-row">Vértices: <strong class="stat-vertices">-</strong></div>
+                    <div class="stat-row">Triángulos: <strong class="stat-triangles">-</strong></div>
+                    <div class="stat-row">Materiales: <strong class="stat-materials">-</strong></div>
+                    <div class="stat-row">Texturas: <strong class="stat-texturas">-</strong></div>
+                </div>
+            </div>
+            <div class="panel" id="actions-panel">
+                <div class="panel-header-dark" onclick="toggleActionsDesktop()">
+                    <span style="opacity: 0;">-</span> <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path></svg>
+                </div>
+                <div class="panel-body">
+                    <button class="btn-outline btn-wireframe">Wireframe: Off</button>
+                    <button class="btn-outline btn-rotate">Rotacion: Off</button>
+                    <button class="btn-outline btn-reset">Reset Camara</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-ui">
+        <div id="mobile-modals">
+            
+            <div id="mob-panel-controles" class="mob-panel">
+                <div class="mob-panel-box">
+                    <div class="mob-panel-header">Controles</div>
+                    <div class="mob-panel-body">
+                        <div class="mob-row">
+                            <span>Intensidad de Luz:</span>
+                            <input type="range" id="m-lightIntensity" min="0" max="3" step="0.1" value="1.2">
+                        </div>
+                        <div class="mob-row">
+                            <span>Color de Fondo:</span>
+                            <div class="color-picker-wrapper"><input type="color" id="m-bgColor" value="#000000"></div>
+                        </div>
+                        <div class="mob-row">
+                            <span>Cuadricula:</span>
+                            <div class="radio-group">
+                                <label><input type="radio" name="m-grid" value="si" checked> Si</label>
+                                <label><input type="radio" name="m-grid" value="no"> No</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="mob-close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
+                </button>
+            </div>
+
+            <div id="mob-panel-fondo" class="mob-panel">
+                <div class="mob-panel-box">
+                    <div class="mob-panel-header">Fondo</div>
+                    <div class="mob-panel-body">
+                        <button class="mob-btn m-bg-claro">Fondo Claro</button>
+                        <button class="mob-btn m-bg-oscuro">Fondo Oscuro</button>
+                    </div>
+                </div>
+                <button class="mob-close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
+                </button>
+            </div>
+
+            <div id="mob-panel-camara" class="mob-panel">
+                <div class="mob-panel-box">
+                    <div class="mob-panel-header">Camara</div>
+                    <div class="mob-panel-body">
+                        <button class="mob-btn btn-wireframe">Wireframe: Off</button>
+                        <button class="mob-btn btn-rotate">Rotacion: Off</button>
+                        <button class="mob-btn btn-reset">Reset Camara</button>
+                    </div>
+                </div>
+                <button class="mob-close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
+                </button>
+            </div>
+
+            <div id="mob-panel-estadisticas" class="mob-panel">
+                <div class="mob-panel-box">
+                    <div class="mob-panel-header">Estadísticas del Modelo</div>
+                    <div class="mob-panel-body" style="gap: 6px;">
+                        <div class="mob-stat">Formato: <span class="stat-format">-</span></div>
+                        <div class="mob-stat">Tamaño: <span class="stat-size">-</span></div>
+                        <div class="mob-stat">Vértices: <span class="stat-vertices">-</span></div>
+                        <div class="mob-stat">Triángulos: <span class="stat-triangles">-</span></div>
+                        <div class="mob-stat">Materiales: <span class="stat-materials">-</span></div>
+                        <div class="mob-stat">Texturas: <span class="stat-texturas">-</span></div>
+                    </div>
+                </div>
+                <button class="mob-close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <nav id="mob-dock">
+            <div class="mob-nav-item" data-target="mob-panel-controles">
+                <div class="nav-pill"></div><span>Controles</span>
+            </div>
+            <div class="mob-nav-item" data-target="mob-panel-fondo">
+                <div class="nav-pill"></div><span>Fondo</span>
+            </div>
+            
+            <div class="mob-upload-wrapper">
+                <label class="mob-upload">
+                    <input type="file" class="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </label>
+            </div>
+
+            <div class="mob-nav-item" data-target="mob-panel-camara">
+                <div class="nav-pill"></div><span>Camara</span>
+            </div>
+            <div class="mob-nav-item" data-target="mob-panel-estadisticas">
+                <div class="nav-pill"></div><span>Estadísticas</span>
+            </div>
+        </nav>
+    </div>
 
     <div id="loader">
         <div class="spinner"></div>
-        <div class="loader-text" id="loaderText">PROCESANDO</div>
+        <div class="loader-text" id="loader-text">CARGANDO</div>
     </div>
 
-    <script src="Js/app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
