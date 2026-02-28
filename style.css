@@ -1,0 +1,220 @@
+:root {
+    --bg-canvas: #000000;
+    --bg-toolbar: #262626;
+    --bg-panel: #111111;
+    --border-color: #333333;
+    --text-main: #e5e7eb;
+    --text-muted: #9ca3af;
+    --blue-primary: #1a73e8;
+    --blue-hover: #1557b0;
+    --font-family: 'Inter', system-ui, sans-serif;
+    --transition: all 0.3s ease;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--bg-canvas);
+    color: var(--text-main);
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- Lienzo 3D --- */
+#canvas-container {
+    position: absolute;
+    top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;
+}
+
+/* --- Barra Lateral Izquierda (Toolbar Desktop) --- */
+#left-toolbar {
+    position: fixed;
+    top: 0; left: 0; width: 56px; height: 100vh;
+    background-color: var(--bg-toolbar); z-index: 50;
+    display: flex; flex-direction: column; align-items: center; padding-top: 16px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5); transition: var(--transition);
+}
+
+input[type="file"] { display: none; }
+
+.upload-btn {
+    width: 40px;
+    height: 40px; background-color: var(--blue-primary);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: var(--transition);
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.4); color: white;
+}
+.upload-btn:hover { background-color: var(--blue-hover); transform: translateY(-1px); }
+.upload-btn:active { transform: translateY(1px); }
+.upload-btn svg { width: 20px; height: 20px; }
+
+/* --- Paneles Derechos (Desktop) --- */
+#right-ui-layer {
+    position: fixed;
+    top: 16px; right: 16px; z-index: 40;
+    display: flex; gap: 12px; align-items: flex-start; pointer-events: none;
+}
+
+#right-ui-layer > * { pointer-events: auto; }
+
+.panel-column { display: flex; flex-direction: column; gap: 8px; width: 260px; }
+
+.panel {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 4px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+}
+
+.panel-header-blue { background-color: var(--blue-primary); color: white; padding: 8px 12px; font-size: 13px; font-weight: 600; }
+.panel-header-dark {
+    background-color: var(--bg-toolbar);
+    padding: 8px 12px; font-size: 13px; color: var(--text-main);
+    display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;
+}
+.panel-header-dark:hover { background-color: #333; }
+.panel-header-dark svg { width: 16px; height: 16px; transition: transform 0.3s; }
+
+.collapsed .panel-header-dark svg { transform: rotate(-90deg); }
+.collapsed .panel-body { display: none; }
+.panel-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.stat-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.stat-row strong { color: var(--text-main); font-weight: 500; }
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid #444; color: var(--text-muted);
+    padding: 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: var(--transition); text-align: center;
+}
+.btn-outline:hover { border-color: #666; color: var(--text-main); }
+.btn-outline.active { border-color: var(--text-main); color: white; background: rgba(255,255,255,0.05); }
+
+#gear-btn {
+    width: 34px;
+    height: 34px; background-color: var(--bg-panel); border: 1px solid var(--border-color);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-muted);
+    transition: var(--transition); flex-shrink: 0;
+}
+#gear-btn:hover { color: white; border-color: #555; }
+#gear-btn svg { width: 18px; height: 18px; }
+
+#controls-panel { display: none; width: 260px; }
+#controls-panel.visible { display: block; }
+
+.control-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+input[type="range"] { width: 120px; accent-color: var(--blue-primary); cursor: pointer; }
+
+.color-picker-wrapper { width: 120px; height: 20px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); position: relative; }
+input[type="color"] { position: absolute; top: -10px; left: -10px; width: 200px; height: 50px; cursor: pointer; border: none; padding: 0; }
+
+.radio-group { display: flex; gap: 12px; align-items: center; }
+.radio-item { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text-main); }
+input[type="radio"] { accent-color: var(--blue-primary); cursor: pointer; margin: 0; }
+
+/* --- Pantalla de Carga --- */
+#loader {
+    position: fixed;
+    inset: 0; background: rgba(0, 0, 0, 0.85);
+    display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 100;
+}
+.spinner {
+    width: 40px;
+    height: 40px; border: 3px solid #333; border-top: 3px solid var(--blue-primary);
+    border-radius: 50%; animation: spin 1s linear infinite;
+}
+.loader-text { margin-top: 16px; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #fff; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- ESTRUCTURA MÓVIL --- */
+#mobile-ui { display: none; }
+
+@media (max-width: 768px) {
+    #left-toolbar, #right-ui-layer { display: none !important; }
+    
+    #mobile-ui { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+    /* --- Dock Inferior Móvil --- */
+    #mob-dock {
+        position: absolute;
+        bottom: 0; width: 100%; height: 85px;
+        background-color: #000000; display: flex; justify-content: space-evenly; align-items: center;
+        pointer-events: auto; padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mob-nav-item {
+        display: flex;
+        flex-direction: column; align-items: center; gap: 6px;
+        cursor: pointer; color: #888; width: 60px;
+    }
+    .mob-nav-item.active { color: #fff; }
+
+    .nav-pill {
+        width: 40px;
+        height: 16px; border-radius: 8px; border: 1.5px solid #666;
+        transition: all 0.2s;
+    }
+    .mob-nav-item.active .nav-pill { background: #666; border-color: #666; }
+    .mob-nav-item span { font-size: 10px; letter-spacing: 0.5px; }
+
+    /* Botón de Upload Central */
+    .mob-upload-wrapper { display: flex; align-items: center; justify-content: center; height: 100%; }
+    .mob-upload {
+        width: 50px;
+        height: 50px; border-radius: 50%; background: var(--blue-primary);
+        display: flex; align-items: center; justify-content: center; color: white;
+        cursor: pointer; pointer-events: auto; transform: translateY(-10px);
+        border: 2px solid #000; box-shadow: 0 2px 10px rgba(26, 115, 232, 0.4);
+    }
+    .mob-upload svg { width: 22px; height: 22px; }
+
+    /* --- Modales Móviles --- */
+    #mobile-modals {
+        position: absolute;
+        top: 15%; left: 0; width: 100%; height: auto;
+        pointer-events: none; display: flex; justify-content: center;
+    }
+
+    .mob-panel { display: none; pointer-events: auto; align-items: flex-start; gap: 8px; }
+    .mob-panel.active { display: flex; }
+
+    .mob-panel-box {
+        background: #111111;
+        border: 1px solid #444; border-radius: 4px;
+        width: 250px; color: #eee; font-size: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .mob-panel-header {
+        text-align: center;
+        padding: 12px; border-bottom: 1px solid #333; font-weight: 400; font-size: 14px;
+    }
+    
+    .mob-panel-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    
+    .mob-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #aaa; }
+    .mob-row input[type="range"] { width: 100px; }
+
+    .mob-btn {
+        background: transparent;
+        border: 1px solid #444; color: #bbb;
+        padding: 10px 14px; text-align: left; border-radius: 4px; font-size: 13px;
+        transition: all 0.2s; cursor: pointer;
+    }
+    .mob-btn:active, .mob-btn.active { border-color: #888; color: #fff; background: rgba(255,255,255,0.05); }
+
+    /* Botón cerrar modal con diseño exacto */
+    .mob-close-btn {
+        background: transparent;
+        border: none; color: #666; cursor: pointer; 
+        padding: 0; display: flex; margin-top: -2px;
+    }
+    .mob-close-btn svg { width: 26px; height: 26px; }
+    .mob-close-btn:active { color: #fff; }
+
+    /* Estadísticas específicas */
+    .mob-stat { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; margin-bottom: 2px; }
+    .mob-stat span { color: #fff; }
+}
