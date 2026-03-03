@@ -111,7 +111,40 @@ input[type="color"] { position: absolute; top: -10px; left: -10px; width: 200px;
     #desktop-ui { display: none !important; }
     #mobile-ui { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 50; }
     
-    #mob-header { position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+    /* Ajustes del Header para Móvil */
+    #mob-header { 
+        position: absolute; 
+        top: 16px; 
+        left: 16px; 
+        display: flex; 
+        align-items: center; 
+        gap: 12px; /* Un poco más de espacio entre logo y texto */
+        pointer-events: none; 
+        z-index: 60;
+    }
+    
+    /* Controlando la imagen en móvil */
+    #mob-header .logo-svg {
+        width: 36px; /* Un poco más grande para que se note en móvil */
+        height: 36px;
+    }
+
+    /* Sobrescribiendo los estilos de PC para el texto en móvil */
+    #mob-header #pc-logo-text {
+        position: static !important; /* Quita la posición fija de PC */
+        font-size: 18px; /* Tamaño adaptado a pantallas pequeñas */
+        line-height: 1.1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-shadow: 1px 1px 4px rgba(0,0,0,0.8); /* Sombra para resaltar sobre el canvas 3D */
+    }
+
+    #mob-header #pc-logo-text span {
+        font-size: 10px;
+        margin-top: 2px;
+        color: #ddd; /* Un gris un poco más claro para mejor contraste en móvil */
+    }
 
     #mob-dock {
         position: absolute; bottom: 0; width: 100%; height: 75px; background-color: #1a1a1a;
