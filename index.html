@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Visor 3D Profesional | FarmeX</title>
+    
+    <meta name="description" content="FarmeX | Visor 3D Profesional. Explora y visualiza modelos 3D interactivos en formatos GLB, GLTF, FBX, OBJ y STL directamente desde tu navegador web de forma rápida y sencilla.">
+    <meta name="keywords" content="Visor 3D, FarmeX, Sloet Froom, modelos 3D, WebGL, 3D viewer, GLB, FBX, OBJ, STL">
+    <meta name="author" content="Sloet Froom">
+    <link rel="canonical" href="https://www.tudominio.com/">
+    
+    <title>FarmeX | Visor 3D Profesional</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
@@ -20,47 +27,28 @@
 
     <main id="canvas-container"></main>
 
-    <aside id="left-toolbar">
-        <label class="upload-btn" title="Subir Modelo 3D">
-            <input type="file" class="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-        </label>
-    </aside>
+    <div id="desktop-ui">
+        <aside id="pc-sidebar">
+            <img src="sloetfroom.png" alt="Sloet Froom" class="logo-svg">
+            
+            <label class="side-btn btn-upload" title="Subir Modelo 3D">
+                <input type="file" class="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14"></path></svg>
+            </label>
+            <button class="side-btn btn-camera" title="Cinemática" onclick="toggleCinematic()">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/></svg>
+            </button>
+        </aside>
 
-    <div id="right-ui-layer">
-        <div id="controls-panel" class="panel">
-            <div class="panel-header-dark" onclick="toggleControlsDesktop()">
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg> Controles
-                </div>
-            </div>
-            <div class="panel-body">
-                <div class="control-row">
-                    <span>Intensidad de Luz:</span>
-                    <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
-                </div>
-                <div class="control-row">
-                    <span>Color de Fondo:</span>
-                    <div class="color-picker-wrapper"><input type="color" id="bgColor" value="#000000"></div>
-                </div>
-                <div class="control-row">
-                    <span>Cuadricula:</span>
-                    <div class="radio-group">
-                        <label class="radio-item"><input type="radio" name="grid" value="si" checked> Si</label>
-                        <label class="radio-item"><input type="radio" name="grid" value="no"> No</label>
-                    </div>
-                </div>
-            </div>
+        <div id="pc-logo-text">
+            FarmeX
+            <span>Sloet Froom</span>
         </div>
 
-        <button id="gear-btn" onclick="toggleControlsDesktop()" title="Configuración de Entorno">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </button>
-
-        <div class="panel-column">
+        <div id="right-panels">
             <div class="panel">
                 <div class="panel-header-blue">Estadísticas del Modelo</div>
-                <div class="panel-body">
+                <div class="panel-body" style="padding: 10px 14px;">
                     <div class="stat-row">Formato: <strong class="stat-format">-</strong></div>
                     <div class="stat-row">Tamaño: <strong class="stat-size">-</strong></div>
                     <div class="stat-row">Vértices: <strong class="stat-vertices">-</strong></div>
@@ -69,90 +57,132 @@
                     <div class="stat-row">Texturas: <strong class="stat-texturas">-</strong></div>
                 </div>
             </div>
-            <div class="panel" id="actions-panel">
-                <div class="panel-header-dark" onclick="toggleActionsDesktop()">
-                    <span style="opacity: 0;">-</span> <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path></svg>
+
+            <div class="panel" id="panel-camara">
+                <div class="panel-header-dark" onclick="toggleDesktopPanel('panel-camara')">
+                    Camara
+                    <svg fill="currentColor" viewBox="0 0 24 24" width="20" height="20"><path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0zm6 2a2 2 0 100-4 2 2 0 000 4z"/></svg>
                 </div>
                 <div class="panel-body">
-                    <button class="btn-outline btn-wireframe">Wireframe: Off</button>
-                    <button class="btn-outline btn-rotate">Rotacion: Off</button>
-                    <button class="btn-outline btn-reset">Reset Camara</button>
+                    <button class="list-btn btn-wireframe"><span class="list-icon"></span> WireFrame: Off</button>
+                    <button class="list-btn btn-rotate"><span class="list-icon"></span> Rotacion: Off</button>
+                    <button class="list-btn btn-reset">
+                        <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Reset Camara
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel" id="panel-controles">
+                <div class="panel-header-dark" onclick="toggleDesktopPanel('panel-controles')">
+                    Controles
+                    <svg fill="currentColor" viewBox="0 0 24 24" width="20" height="20"><path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0zm6 2a2 2 0 100-4 2 2 0 000 4z"/></svg>
+                </div>
+                <div class="panel-body">
+                    <div class="control-row">
+                        <span>Intensidad de Luz:</span>
+                        <input type="range" id="lightIntensity" min="0" max="3" step="0.1" value="1.2">
+                    </div>
+                    <div class="control-row">
+                        <span>Color de Fondo:</span>
+                        <div class="color-picker-wrapper"><input type="color" id="bgColor" value="#000000"></div>
+                    </div>
+                    <div class="control-row">
+                        <span>Cuadricula:</span>
+                        <div class="radio-group">
+                            <label class="radio-item"><input type="radio" class="custom-radio" name="grid" value="si" checked> Si</label>
+                            <label class="radio-item"><input type="radio" class="custom-radio" name="grid" value="no"> No</label>
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <span>Sombras:</span>
+                        <div class="radio-group">
+                            <label class="radio-item"><input type="radio" class="custom-radio" name="shadows" value="si"> Si</label>
+                            <label class="radio-item"><input type="radio" class="custom-radio" name="shadows" value="no" checked> No</label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="mobile-ui">
+        <div id="mob-overlay" onclick="closeAllMobPanels()"></div>
+
+        <div id="mob-header">
+            <img src="sloetfroom.png" alt="Sloet Froom" class="logo-svg">
+            <div id="pc-logo-text" style="position: static;">
+                FarmeX <span>Sloet Froom</span>
+            </div>
+        </div>
+
         <div id="mobile-modals">
-            
             <div id="mob-panel-controles" class="mob-panel">
                 <div class="mob-panel-box">
                     <div class="mob-panel-header">Controles</div>
                     <div class="mob-panel-body">
-                        <div class="mob-row">
+                        <div class="control-row">
                             <span>Intensidad de Luz:</span>
                             <input type="range" id="m-lightIntensity" min="0" max="3" step="0.1" value="1.2">
                         </div>
-                        <div class="mob-row">
+                        <div class="control-row">
                             <span>Color de Fondo:</span>
                             <div class="color-picker-wrapper"><input type="color" id="m-bgColor" value="#000000"></div>
                         </div>
-                        <div class="mob-row">
+                        <div class="control-row" style="margin-top: 6px;">
                             <span>Cuadricula:</span>
                             <div class="radio-group">
-                                <label><input type="radio" name="m-grid" value="si" checked> Si</label>
-                                <label><input type="radio" name="m-grid" value="no"> No</label>
+                                <label class="radio-item"><input type="radio" class="custom-radio" name="m-grid" value="si" checked> Si</label>
+                                <label class="radio-item"><input type="radio" class="custom-radio" name="m-grid" value="no"> No</label>
+                            </div>
+                        </div>
+                        <div class="control-row" style="margin-top: 6px;">
+                            <span>Sombras:</span>
+                            <div class="radio-group">
+                                <label class="radio-item"><input type="radio" class="custom-radio" name="m-shadows" value="si"> Si</label>
+                                <label class="radio-item"><input type="radio" class="custom-radio" name="m-shadows" value="no" checked> No</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <button class="mob-close-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
-                </button>
             </div>
 
             <div id="mob-panel-fondo" class="mob-panel">
                 <div class="mob-panel-box">
-                    <div class="mob-panel-header">Fondo</div>
+                    <div class="mob-panel-header">Fondo de la Web</div>
                     <div class="mob-panel-body">
-                        <button class="mob-btn m-bg-claro">Fondo Claro</button>
-                        <button class="mob-btn m-bg-oscuro">Fondo Oscuro</button>
+                        <button class="list-btn m-bg-claro" style="color:#eee;"><span class="list-icon"></span> Fondo Claro</button>
+                        <button class="list-btn m-bg-oscuro active" style="color:#eee;"><span class="list-icon"></span> Fondo Oscuro</button>
                     </div>
                 </div>
-                <button class="mob-close-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
-                </button>
             </div>
 
             <div id="mob-panel-camara" class="mob-panel">
                 <div class="mob-panel-box">
                     <div class="mob-panel-header">Camara</div>
                     <div class="mob-panel-body">
-                        <button class="mob-btn btn-wireframe">Wireframe: Off</button>
-                        <button class="mob-btn btn-rotate">Rotacion: Off</button>
-                        <button class="mob-btn btn-reset">Reset Camara</button>
+                        <button class="list-btn btn-wireframe" style="color:#eee;"><span class="list-icon"></span> WireFrame: Off</button>
+                        <button class="list-btn btn-rotate" style="color:#eee;"><span class="list-icon"></span> Rotacion: Off</button>
+                        <button class="list-btn btn-reset" style="color:#eee;">
+                            <svg class="icon-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Reset Camara
+                        </button>
                     </div>
                 </div>
-                <button class="mob-close-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
-                </button>
             </div>
 
             <div id="mob-panel-estadisticas" class="mob-panel">
                 <div class="mob-panel-box">
                     <div class="mob-panel-header">Estadísticas del Modelo</div>
-                    <div class="mob-panel-body" style="gap: 6px;">
-                        <div class="mob-stat">Formato: <span class="stat-format">-</span></div>
-                        <div class="mob-stat">Tamaño: <span class="stat-size">-</span></div>
-                        <div class="mob-stat">Vértices: <span class="stat-vertices">-</span></div>
-                        <div class="mob-stat">Triángulos: <span class="stat-triangles">-</span></div>
-                        <div class="mob-stat">Materiales: <span class="stat-materials">-</span></div>
-                        <div class="mob-stat">Texturas: <span class="stat-texturas">-</span></div>
+                    <div class="mob-panel-body" style="gap: 8px;">
+                        <div class="stat-row">Formato: <strong class="stat-format">-</strong></div>
+                        <div class="stat-row">Tamaño: <strong class="stat-size">-</strong></div>
+                        <div class="stat-row">Vértices: <strong class="stat-vertices">-</strong></div>
+                        <div class="stat-row">Triángulos: <strong class="stat-triangles">-</strong></div>
+                        <div class="stat-row">Materiales: <strong class="stat-materials">-</strong></div>
+                        <div class="stat-row">Texturas: <strong class="stat-texturas">-</strong></div>
                     </div>
                 </div>
-                <button class="mob-close-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M8 12h8"/></svg>
-                </button>
             </div>
         </div>
 
@@ -167,7 +197,7 @@
             <div class="mob-upload-wrapper">
                 <label class="mob-upload">
                     <input type="file" class="fileInput" accept=".glb, .gltf, .fbx, .obj, .stl">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"></path></svg>
                 </label>
             </div>
 
