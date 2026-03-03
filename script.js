@@ -1,28 +1,16 @@
-// --- LÓGICA DE INTERFAZ UI MÓVIL Y DESKTOP ---
-const controlsPanel = document.getElementById('controls-panel');
-const gearBtn = document.getElementById('gear-btn');
-const actionsPanel = document.getElementById('actions-panel');
-
-function toggleControlsDesktop() {
-    const isVisible = controlsPanel.classList.contains('visible');
-    if (isVisible) {
-        controlsPanel.classList.remove('visible');
-        gearBtn.style.display = 'flex';
-    } else {
-        controlsPanel.classList.add('visible');
-        gearBtn.style.display = 'none';
-    }
+// --- INTERFAZ UI ---
+function toggleDesktopPanel(id) {
+    document.getElementById(id).classList.toggle('collapsed');
 }
-function toggleActionsDesktop() { actionsPanel.classList.toggle('collapsed'); }
 
-// Navegación Móvil
 const mobNavItems = document.querySelectorAll('.mob-nav-item');
 const mobPanels = document.querySelectorAll('.mob-panel');
-const mobCloseBtns = document.querySelectorAll('.mob-close-btn');
+const mobOverlay = document.getElementById('mob-overlay');
 
 function closeAllMobPanels() {
     mobPanels.forEach(p => p.classList.remove('active'));
     mobNavItems.forEach(n => n.classList.remove('active'));
+    if(mobOverlay) mobOverlay.classList.remove('active');
 }
 
 mobNavItems.forEach(item => {
@@ -35,21 +23,19 @@ mobNavItems.forEach(item => {
         if(!isActive) {
             targetPanel.classList.add('active');
             item.classList.add('active');
+            if(mobOverlay) mobOverlay.classList.add('active');
         }
     });
 });
-mobCloseBtns.forEach(btn => btn.addEventListener('click', closeAllMobPanels));
 
-// Actualizar Textos Estadísticas Múltiples (Escritorio y Móvil)
 function updateStatText(selectorClass, text) {
-    document.querySelectorAll('.' + selectorClass).forEach(el => el.innerText = text);
+    document.querySelectorAll('.' + selectorClass).forEach(el => el.innerHTML = text);
 }
 
-// Sincronizar Controles Universales (Escritorio y Móvil)
+// Sincronización Universal de Controles
 function syncLighting(val) {
     mainLight.intensity = val;
     ambientLight.intensity = val * 0.5;
-    fillLight.intensity = val * 0.4;
     document.getElementById('lightIntensity').value = val;
     document.getElementById('m-lightIntensity').value = val;
 }
@@ -60,27 +46,34 @@ function syncBackground(hexStr) {
     scene.background.set(hexStr);
     document.getElementById('bgColor').value = hexStr;
     document.getElementById('m-bgColor').value = hexStr;
+    document.querySelector('.m-bg-claro').classList.toggle('active', hexStr === '#ffffff');
+    document.querySelector('.m-bg-oscuro').classList.toggle('active', hexStr === '#000000');
 }
 document.getElementById('bgColor').addEventListener('input', e => syncBackground(e.target.value));
 document.getElementById('m-bgColor').addEventListener('input', e => syncBackground(e.target.value));
 
-// Botones rápidos de Fondo Móvil
-document.querySelector('.m-bg-claro').addEventListener('click', () => syncBackground('#ffffff'));
-document.querySelector('.m-bg-oscuro').addEventListener('click', () => syncBackground('#000000'));
+document.querySelector('.m-bg-claro').addEventListener('click', () => { syncBackground('#ffffff'); closeAllMobPanels(); });
+document.querySelector('.m-bg-oscuro').addEventListener('click', () => { syncBackground('#000000'); closeAllMobPanels(); });
 
 function syncGrid(val) {
     grid.visible = (val === 'si');
     document.querySelector(`input[name="grid"][value="${val}"]`).checked = true;
     document.querySelector(`input[name="m-grid"][value="${val}"]`).checked = true;
 }
-document.querySelectorAll('input[name="grid"]').forEach(r => r.addEventListener('change', e => syncGrid(e.target.value)));
-document.querySelectorAll('input[name="m-grid"]').forEach(r => r.addEventListener('change', e => syncGrid(e.target.value)));
+document.querySelectorAll('input[name="grid"], input[name="m-grid"]').forEach(r => r.addEventListener('change', e => syncGrid(e.target.value)));
 
 // --- LÓGICA THREE.JS ---
 let scene, camera, renderer, controls, grid, mixer;
-let mainLight, ambientLight, fillLight;
+let mainLight, ambientLight, floorPlan;
 let currentModel = null;
+
 let isWireframe = false;
+let shadowsEnabled = false;
+
+/* Variables de Cinemática Suave */
+let isCinematic = false;
+let cinematicTime = 0;
+let modelSize = 5;
 
 const clock = new THREE.Clock();
 const initialCamPos = new THREE.Vector3(8, 5, 8);
@@ -90,35 +83,51 @@ function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
     
-    grid = new THREE.GridHelper(100, 100, 0x333333, 0x111111);
-    grid.position.y = -0.01; 
-    scene.add(grid);
-
-    ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-    scene.add(ambientLight);
-
-    mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    mainLight.position.set(5, 10, 7);
-    scene.add(mainLight);
-
-    fillLight = new THREE.DirectionalLight(0xddeeff, 0.5);
-    fillLight.position.set(-5, 5, -5);
-    scene.add(fillLight);
-
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-    camera.position.copy(initialCamPos);
-
+    // Renderizador con Sombras
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.shadowMap.enabled = true; 
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
+
+    // Cuadricula
+    grid = new THREE.GridHelper(100, 100, 0x333333, 0x111111);
+    grid.position.y = -0.01; 
+    scene.add(grid);
+
+    // Suelo invisible para recibir sombras
+    const floorGeo = new THREE.PlaneGeometry(200, 200);
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.6 });
+    floorPlan = new THREE.Mesh(floorGeo, floorMat);
+    floorPlan.rotation.x = -Math.PI / 2;
+    floorPlan.position.y = -0.02;
+    floorPlan.receiveShadow = true;
+    scene.add(floorPlan);
+
+    // Luces
+    ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    scene.add(ambientLight);
+
+    mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    mainLight.position.set(10, 20, 15);
+    mainLight.castShadow = true; 
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.bias = -0.001;
+    scene.add(mainLight);
+
+    // Camara
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.position.copy(initialCamPos);
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.dampingFactor = 0.05;
 
-    setupEvents(); animate();
+    setupEvents(); 
+    animate();
 }
 
 function setupEvents() {
@@ -128,17 +137,28 @@ function setupEvents() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Conectar ambos file inputs (Escritorio y Móvil)
-    document.querySelectorAll('.fileInput').forEach(inp => {
-        inp.addEventListener('change', handleUpload);
-    });
+    document.querySelectorAll('.fileInput').forEach(inp => { inp.addEventListener('change', handleUpload); });
 
-    // Acciones de Cámara (Conectar todos los botones a la misma lógica)
+    // Toggle de Sombras
+    document.querySelectorAll('input[name="shadows"], input[name="m-shadows"]').forEach(r => r.addEventListener('change', e => {
+        shadowsEnabled = (e.target.value === 'si');
+        document.querySelector(`input[name="shadows"][value="${e.target.value}"]`).checked = true;
+        document.querySelector(`input[name="m-shadows"][value="${e.target.value}"]`).checked = true;
+        if(currentModel) {
+            currentModel.traverse(child => {
+                if(child.isMesh) {
+                    child.castShadow = shadowsEnabled;
+                    child.receiveShadow = shadowsEnabled;
+                }
+            });
+        }
+    }));
+
+    // Botones de Cámara
     document.querySelectorAll('.btn-wireframe').forEach(btn => {
         btn.addEventListener('click', () => {
             if(!currentModel) return;
             isWireframe = !isWireframe;
-            
             currentModel.traverse(child => {
                 if(child.isMesh && child.material) {
                     const mats = Array.isArray(child.material) ? child.material : [child.material];
@@ -146,7 +166,7 @@ function setupEvents() {
                 }
             });
             document.querySelectorAll('.btn-wireframe').forEach(b => {
-                b.innerText = `Wireframe: ${isWireframe ? 'ON' : 'Off'}`;
+                b.innerHTML = `<span class="list-icon"></span> WireFrame: ${isWireframe ? 'ON' : 'Off'}`;
                 b.classList.toggle('active', isWireframe);
             });
         });
@@ -156,7 +176,7 @@ function setupEvents() {
         btn.addEventListener('click', () => {
             controls.autoRotate = !controls.autoRotate;
             document.querySelectorAll('.btn-rotate').forEach(b => {
-                b.innerText = `Rotacion: ${controls.autoRotate ? 'ON' : 'Off'}`;
+                b.innerHTML = `<span class="list-icon"></span> Rotacion: ${controls.autoRotate ? 'ON' : 'Off'}`;
                 b.classList.toggle('active', controls.autoRotate);
             });
         });
@@ -164,16 +184,22 @@ function setupEvents() {
 
     document.querySelectorAll('.btn-reset').forEach(btn => {
         btn.addEventListener('click', () => {
+            isCinematic = false;
+            controls.enabled = true;
             camera.position.copy(initialCamPos);
             controls.target.set(0,0,0);
             controls.update();
-            
-            document.querySelectorAll('.btn-reset').forEach(b => {
-                b.classList.add('active'); setTimeout(() => b.classList.remove('active'), 200);
-            });
         });
     });
 }
+
+// Función global llamada por el botón verde para activar modo película (barrido suave)
+window.toggleCinematic = function() {
+    if(!currentModel) return;
+    isCinematic = !isCinematic;
+    controls.enabled = !isCinematic; // Apaga los controles manuales si está en cinemática
+    if(isCinematic) cinematicTime = 0; // reinicia el ángulo
+};
 
 function cleanMemory() {
     if (!currentModel) return;
@@ -184,12 +210,7 @@ function cleanMemory() {
                 const mats = Array.isArray(child.material) ? child.material : [child.material];
                 mats.forEach(m => {
                     m.dispose();
-                    if (m.map) m.map.dispose(); if (m.lightMap) m.lightMap.dispose();
-                    if (m.bumpMap) m.bumpMap.dispose(); if (m.normalMap) m.normalMap.dispose();
-                    if (m.specularMap) m.specularMap.dispose(); if (m.envMap) m.envMap.dispose();
-                    if (m.alphaMap) m.alphaMap.dispose(); if (m.aoMap) m.aoMap.dispose();
-                    if (m.displacementMap) m.displacementMap.dispose(); if (m.emissiveMap) m.emissiveMap.dispose();
-                    if (m.gradientMap) m.gradientMap.dispose(); if (m.metalnessMap) m.metalnessMap.dispose();
+                    if (m.map) m.map.dispose(); if (m.normalMap) m.normalMap.dispose();
                     if (m.roughnessMap) m.roughnessMap.dispose();
                 });
             }
@@ -202,7 +223,7 @@ function handleUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    closeAllMobPanels(); // Cierra los menús móviles si estaban abiertos
+    closeAllMobPanels();
 
     const mbSize = (file.size / (1024*1024)).toFixed(2);
     updateStatText('stat-size', `${mbSize} MB`);
@@ -238,8 +259,11 @@ function handleUpload(event) {
 function displayModel(model, animations) {
     cleanMemory();
     isWireframe = false;
+    isCinematic = false;
+    controls.enabled = true;
+    
     document.querySelectorAll('.btn-wireframe').forEach(b => {
-        b.innerText = 'Wireframe: Off'; b.classList.remove('active');
+        b.innerHTML = '<span class="list-icon"></span> WireFrame: Off'; b.classList.remove('active');
     });
 
     mixer = null;
@@ -253,6 +277,9 @@ function displayModel(model, animations) {
 
     model.traverse(child => {
         if (child.isMesh) {
+            child.castShadow = shadowsEnabled;
+            child.receiveShadow = shadowsEnabled;
+            
             if(child.geometry) {
                 verts += child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
                 if(child.geometry.index) tris += child.geometry.index.count / 3;
@@ -284,12 +311,17 @@ function displayModel(model, animations) {
     scene.add(model); currentModel = model;
 
     const maxDim = Math.max(size.x, size.y, size.z);
+    modelSize = maxDim; 
     const dist = maxDim * 1.5;
-    initialCamPos.set(dist, dist*0.8, dist);
     
-    document.querySelectorAll('.btn-reset')[0].click();
+    mainLight.shadow.camera.top = maxDim;
+    mainLight.shadow.camera.bottom = -maxDim;
+    mainLight.shadow.camera.left = -maxDim;
+    mainLight.shadow.camera.right = maxDim;
+    mainLight.shadow.camera.updateProjectionMatrix();
 
-    // Simula click en Desktop que aplica a todo
+    initialCamPos.set(dist, dist*0.8, dist);
+    document.querySelectorAll('.btn-reset')[0].click();
     document.getElementById('loader').style.display = 'none';
 }
 
@@ -301,7 +333,7 @@ function onProgress(xhr) {
 }
 
 function onError(err) {
-    console.error("Error FarmeX Engine:", err);
+    console.error("Error:", err);
     document.getElementById('loader-text').innerText = 'ERROR DE LECTURA';
     setTimeout(() => document.getElementById('loader').style.display='none', 2500);
 }
@@ -309,7 +341,21 @@ function onError(err) {
 function animate() {
     requestAnimationFrame(animate);
     if(mixer) mixer.update(clock.getDelta());
-    controls.update(); 
+    
+    /* Lógica para Cinemática: Efecto Péndulo Suave */
+    if(isCinematic && currentModel) {
+        cinematicTime += 0.005; // Velocidad del movimiento
+        const dist = modelSize * 1.8;
+        const sweepAngle = Math.sin(cinematicTime) * 1.5; // El barrido máximo
+        
+        camera.position.x = Math.sin(sweepAngle) * dist;
+        camera.position.z = Math.cos(sweepAngle) * dist;
+        camera.position.y = (Math.sin(cinematicTime * 2) * (dist * 0.1)) + (dist * 0.6);
+        camera.lookAt(0, modelSize * 0.2, 0); // Siempre enfoca al modelo
+    } else {
+        controls.update();
+    }
+    
     renderer.render(scene, camera);
 }
 
